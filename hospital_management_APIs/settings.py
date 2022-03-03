@@ -155,16 +155,7 @@ REST_FRAMEWORK = {
     ],
 }'''
 
-'''EMAIL_HOST = 'smtp.sendgrid.net'
-EMAIL_PORT = '587'
-#SENDGRID_PORT = '465'
-EMAIL_HOST_USER = 'apikey'
-EMAIL_HOST_PASSWORD = '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'
-EMAIL_USE_TLS = True
-EMAIL_USE_SSL = False
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'''''
-'''DEFAULT_FROM_EMAIL = 'vetrisenthilmkce@gmail.com'
-EMAIL_FROM = 'vetrisenthilmkce@gmail.com'''
+
 
 
 
