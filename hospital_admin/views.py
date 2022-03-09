@@ -9,6 +9,7 @@ from .serializers import PatientSerializer
 from rest_framework import status
 from django.db.models import Q
 import math
+from django.contrib import admin
 
 class doctor_list(APIView):
     def get(self, request):
@@ -26,13 +27,17 @@ class doctor_list(APIView):
 
     def get(self, request):
         s = request.GET.get('s')
+        f = request.GET.get('f')
         sort = request.GET.get('sort')
         page = int(request.GET.get('page', 1))
         per_page = 32
-        doctors = doctor.objects.all()
+        doctors = doctor.objects.filter(is_deleted=0).all()
 
         if s:
-            doctors = doctors.filter(Q(name__icontains=s) | Q(email__icontains=s))
+            doctors = doctors.filter(Q(name__icontains=s) | Q(email__icontains=s) | Q(specialization__icontains=s))
+
+        if f:
+            doctors = doctors.filter(Q(specialization=f))
 
         if sort == 'asc':
             doctors = doctors.order_by('name')
@@ -79,12 +84,16 @@ class doctor_details(APIView):
 
     def delete(self, request, pk):
         try:
-            doctors = patient.objects.get(pk=pk)
-        except patient.DoesNotExist:
+            doctors = doctor.objects.get(pk=pk)
+        except doctor.DoesNotExist:
             error = {'status': '400', 'message': 'NOT FOUND'}
             return Response(error, status=status.HTTP_404_NOT_FOUND)
-        doctors.delete()
+        doctors.soft_delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+        #data = doctor.objects.filter(is_active=True)
+
+        #return Response(status=status.HTTP_200_OK)
+
 
 
 
@@ -107,7 +116,7 @@ class patient_list(APIView):
         sort = request.GET.get('sort')
         page = int(request.GET.get('page', 1))
         per_page = 32
-        patients = patient.objects.all()
+        patients = patient.objects.filter(is_deleted=0).all()
 
         if s:
             patients = patients.filter(Q(name__icontains=s) | Q(email__icontains=s))
@@ -156,7 +165,6 @@ class patient_details(APIView):
         except patient.DoesNotExist:
             error = {'status': '400', 'message': 'NOT FOUND'}
             return Response(error, status=status.HTTP_404_NOT_FOUND)
-        patients.delete()
+        patients.soft_delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
 
