@@ -10,6 +10,14 @@ from rest_framework import status
 from django.db.models import Q
 import math
 from django.contrib import admin
+from rest_framework import generics, permissions
+from rest_framework.response import Response
+from knox.models import AuthToken
+from .serializers import UserSerializer, RegisterSerializer
+from django.contrib.auth import login
+from rest_framework import permissions
+from rest_framework.authtoken.serializers import AuthTokenSerializer
+from knox.views import LoginView as KnoxLoginView
 
 class doctor_list(APIView):
     def get(self, request):
@@ -20,10 +28,12 @@ class doctor_list(APIView):
 
     def post(self, request):
         serializer = DoctorSerializer(data=request.data)
+        approve = {'Status': 'Approved'}
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(approve, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
     def get(self, request):
         s = request.GET.get('s')
@@ -89,7 +99,8 @@ class doctor_details(APIView):
             error = {'status': '400', 'message': 'NOT FOUND'}
             return Response(error, status=status.HTTP_404_NOT_FOUND)
         doctors.soft_delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        reject = {'Status': 'Rejected'}
+        return Response(reject, status=status.HTTP_204_NO_CONTENT)
         #data = doctor.objects.filter(is_active=True)
 
         #return Response(status=status.HTTP_200_OK)
@@ -106,13 +117,15 @@ class patient_list(APIView):
 
     def post(self, request):
         serializer = PatientSerializer(data=request.data)
+        approve = {'Status': 'Approved'}
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(approve, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request):
         s = request.GET.get('s')
+        f = request.GET.get('f')
         sort = request.GET.get('sort')
         page = int(request.GET.get('page', 1))
         per_page = 32
@@ -120,6 +133,9 @@ class patient_list(APIView):
 
         if s:
             patients = patients.filter(Q(name__icontains=s) | Q(email__icontains=s))
+
+        if f:
+            patients = patients.filter(Q(symptoms=f))
 
         if sort == 'asc':
             patients = patients.order_by('name')
@@ -166,5 +182,30 @@ class patient_details(APIView):
             error = {'status': '400', 'message': 'NOT FOUND'}
             return Response(error, status=status.HTTP_404_NOT_FOUND)
         patients.soft_delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        reject = {'Status': 'Rejected'}
+        return Response(reject, status=status.HTTP_204_NO_CONTENT)
+
+
+class RegisterAPI(generics.GenericAPIView):
+    serializer_class = RegisterSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response({
+        "user": UserSerializer(user, context=self.get_serializer_context()).data,
+        "token": AuthToken.objects.create(user)[1],
+        })
+
+
+class LoginAPI(KnoxLoginView):
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request, format=None):
+        serializer = AuthTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        login(request, user)
+        return super(LoginAPI, self).post(request, format=None)
 
