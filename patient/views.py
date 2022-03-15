@@ -1,37 +1,37 @@
-from django.shortcuts import render
-
-# Create your views here.
-from rest_framework import generics, permissions
+from rest_framework.views import APIView
 from rest_framework.response import Response
-from knox.models import AuthToken
-from .serializers import UserSerializer, RegisterSerializer
-from django.contrib.auth import login
-from rest_framework import permissions
-from rest_framework.authtoken.serializers import AuthTokenSerializer
-from knox.views import LoginView as KnoxLoginView
+from .serializers import RegisterSerializer
+from rest_framework import status
+from hospital_admin.models import patient
+from django.contrib.auth import authenticate, login
+from django.core.mail import send_mail
+from .serializers import LoginSerializer
 
+class RegisterAPI(APIView):
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            send_mail(
+                'Doctor credentials',
+                f'{serializer.data}',
+                'from{email}',
+                ['tovetrisenthilmkce@gmail.com'],
+                fail_silently=False,
+            )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class RegisterAPI(generics.GenericAPIView):
-    serializer_class = RegisterSerializer
+class LoginAPI(APIView):
 
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        return Response({
-        "user": UserSerializer(user, context=self.get_serializer_context()).data,
-        "token": AuthToken.objects.create(user)[1],
-        })
-
-
-class LoginAPI(KnoxLoginView):
-    permission_classes = (permissions.AllowAny,)
-
-    def post(self, request, format=None):
-        serializer = AuthTokenSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
-        login(request, user)
-        return super(LoginAPI, self).post(request, format=None)
-
-# Create your views here.
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        if serializer.is_valid():
+            user = authenticate(username = request.data.get('username'), password = request.data.get('password'))
+            if user is not None:
+                login(request, user)
+                response = {'You have successfully logged in.'}
+                return Response(response, status=status.HTTP_200_OK)
+            else:
+                return Response({'Invalid Credentials'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
