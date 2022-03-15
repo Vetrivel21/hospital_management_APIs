@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework import generics, permissions, mixins
 from hospital_admin.models import doctor
 from knox.models import AuthToken
-from django.contrib.auth import login
+from django.contrib.auth import authenticate, login
 from rest_framework import permissions
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from knox.views import LoginView as KnoxLoginView
@@ -39,7 +39,12 @@ class LoginAPI(APIView):
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            user = authenticate(username = request.data.get('username', None), password = request.data.get('password', None))
+            if user is not None:
+                login(request, user)
+                response = {'You have successfully logged in.'}
+                return Response(response, status=status.HTTP_200_OK)
+            else:
+                return Response({'Invalid Credentials'}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
