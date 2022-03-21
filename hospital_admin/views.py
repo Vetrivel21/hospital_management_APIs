@@ -18,6 +18,7 @@ from django.contrib.auth import login
 from rest_framework import permissions
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from knox.views import LoginView as KnoxLoginView
+from django.contrib.auth import authenticate, login
 
 class doctor_list(APIView):
     def get(self, request):
@@ -64,6 +65,9 @@ class doctor_list(APIView):
                          'page': page,
                          'last_page': math.ceil(total / per_page),
                          })
+#
+
+
 
 class doctor_details(APIView):
     def get(self,request,pk):
@@ -109,9 +113,13 @@ class doctor_details(APIView):
 
 
 
+
+
+
+
 class patient_list(APIView):
-    def get(self, request):
-        patients = patient.objects.all()
+    def get(self, request, pk):
+        patients = patient.objects.get(pk=pk)
         serializer = PatientSerializer(patients, many=True)
         return Response(serializer.data)
 
@@ -153,6 +161,13 @@ class patient_list(APIView):
                          'last_page': math.ceil(total / per_page),
                          })
 
+class dischargeAPI(APIView):
+    def get(self, request):
+        patients = patient.objects.all()
+        patients.is_deleted = True
+        serializer = PatientSerializer(patients, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 class patient_details(APIView):
     def get(self, request, pk):
         try:
@@ -182,7 +197,7 @@ class patient_details(APIView):
             error = {'status': '400', 'message': 'NOT FOUND'}
             return Response(error, status=status.HTTP_404_NOT_FOUND)
         patients.soft_delete()
-        reject = {'Status': 'Rejected'}
+        reject = {'Status': 'Rejected', 'Message': 'Discharged'}
         return Response(reject, status=status.HTTP_204_NO_CONTENT)
 
 
@@ -208,4 +223,31 @@ class LoginAPI(KnoxLoginView):
         user = serializer.validated_data['user']
         login(request, user)
         return super(LoginAPI, self).post(request, format=None)
+
+'''class admin(APIView):
+        def post(request, *args, **kwargs):
+            username = request['username']
+            password = request['password']
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                if user.is_active:
+                    login(request, user)
+                    response = {'You have successfully logged in.'}
+                    return Response(response, status=status.HTTP_200_OK)
+                else:
+                    return Response({'Invalid Credentials'}, status=status.HTTP_400_BAD_REQUEST)'''
+
+class admin_login(APIView):
+    def post(self, request):
+        username = request.POST.get['username']
+        password = request.POST.get['password']
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            response = {'You have successfully logged in.'}
+            return Response(response, status=status.HTTP_200_OK)
+        else:
+            return Response({'Invalid Credentials'}, status=status.HTTP_400_BAD_REQUEST)
+
+
 
