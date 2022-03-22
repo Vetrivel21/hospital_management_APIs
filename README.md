@@ -1,13 +1,29 @@
 # hospital_management_APIs
-# Steps to install and run the project 
-1. Download and install Pycharm IDE.
-2. Initially install python in system and configure the python interpreter in pycharm settings.
-3. Specify the path where the project has to be created.
-4. Install Django in pycharm using the command: pip install django
-5. Create a new project in django using the command: django-admin startproject student_management_system
-6. Create a app in django using the command: python manage.py startapp student
-7. Create the admin by using the command: python manage.py createsuperuser
-8. Run the project using the command: python manage.py runserver
+# Steps to install Django application and creating a project.
+1. Download and install python version 3.10.1. 
+2. Download and install Pycharm IDE.
+3. Initially install python in system and configure the python interpreter in pycharm settings.
+4. Specify the path where the project has to be created.
+5. Install Django of version 3.9.10 in pycharm using the command: pip install django
+6. Create a new project in django using the command: django-admin startproject student_management_system
+7. Create a app in django using the command: python manage.py startapp student
+8. Create the admin by using the command: python manage.py createsuperuser
+9. Run the project using the command: python manage.py runserver
+
+# Steps to run the project
+1. Install python and pycharm IDE for running the project.
+2. Open the terminal and execute following commands.
+3. Install dependencies: pipenv install (This will create a virtual environment and install all depedencies).
+4. Activate the virtual environment: pipenv shell
+5. Configure the valid python interpreter for running the project.
+6. Follow the commands:
+   * pip install djangorestframework
+   * Add "rest_framework" in the Installed apps in settings.py file.
+   * py manage.py makemigrations
+   * py manage.py migrate
+8. Run the app: python manage.py runserver
+9. Enter following URL in Your Browser or postman with url endpoints and send the request.
+http://127.0.0.1:8000/
 
 # Requirements
 asgiref==3.5.0
